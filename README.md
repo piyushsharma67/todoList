@@ -28,11 +28,16 @@ You should: -
 -	Implement the ordering system.
 -	Add unit tests to ensure the behaviour is correct.
 
+
+
+
+
+
 My Solution: -
 
-- created a client page where he could add task so you can run it by clicking over it for a interface
-- i have used air in order to hot reload when i make changes to the files
-- i have added priority as a column which is by default incremented 
-- for now user could make changes to the priority, lower the number higher the priority and list fetched is sorted on basis of priority
-- in case priority clashes then the list is sorted on the basis of updated_at column
+- created a client page where he could add task so you can run it by clicking over it (just for a quick interface) which could be found under cmd/todolist/client.  
+- i have used air in order to hot reload when i make changes to the files.
+- i have added priority as a column which is by default incremented when user sends it.
+- for now user could make changes to the priority, lower the number higher the priority and list fetched is sorted on basis of priority.
+- in case priority clashes then the list is sorted on the basis of updated_at column.
 - since i have added 3 column i have accordingly made changes to the test cases for the api endpoints and db queries.
