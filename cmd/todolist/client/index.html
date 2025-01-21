@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task List</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Remove the default bullet points */
+        #taskList {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        /* Add some spacing between tasks */
+        #taskList li {
+            margin: 5px 0;
+        }
+
+        /* Style for input and button */
+        .task-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .task-container input {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task List Application</h1>
+
+    <!-- Input and Submit Button for Adding Tasks -->
+    <div>
+        <label for="taskInput">Enter a Task:</label>
+        <input type="text" id="taskInput" placeholder="Enter task here" />
+        <button onclick="addTask()">Submit Task</button>
+    </div>
+
+    <hr>
+
+    <!-- Section to Display the List of Tasks -->
+    <h3>Task List:</h3>
+    <ul id="taskList">
+        <!-- Tasks will be displayed here -->
+    </ul>
+
+    <script>
+        const apiUrl = 'http://localhost:8080/todolist/';  // Replace with your API server URL
+
+        let currentId = 1;  // Start with id 1, will be updated after fetching tasks
+
+        // Function to add a task via API call
+        async function addTask() {
+            const taskInput = document.getElementById('taskInput').value;
+            if (!taskInput) {
+                alert('Please enter a task.');
+                return;
+            }
+
+            try {
+                const uuid = crypto.randomUUID(); // Convert the currentId to string
+                
+                const response = await fetch(`${apiUrl}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item: taskInput, id: uuid,priority:currentId }),
+                });
+                
+                if (response.ok) {
+                    alert('Task added successfully!');
+                    currentId+=1
+                    fetchTasks();  // Re-fetch the task list after adding a new task
+                } else {
+                    alert('Error adding task');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to add task');
+            }
+        }
+
+        // Function to fetch tasks from API and display them in the list
+        async function fetchTasks() {
+            try {
+                const response = await fetch(`${apiUrl}`,{method:"GET"});
+                const data = await response.json();
+                if (response.ok) {
+                    const taskList = document.getElementById('taskList');
+                    taskList.innerHTML = '';  // Clear the existing list
+                    // currentId = 1;  // Reset the currentId to 1 before setting it from the task list
+
+                    // Display task id and task name with a button to update the order
+                    data?.Items?.forEach(task => {
+                        const li = document.createElement('li');
+                        li.style.listStyle = 'none'; // Remove bullets for each card
+
+                        const taskCard = document.createElement('div');
+                        taskCard.classList.add('task-card'); // Add a class for styling
+                        taskCard.style.border = '1px solid #ddd';
+                        taskCard.style.borderRadius = '8px';
+                        taskCard.style.padding = '15px';
+                        taskCard.style.marginBottom = '10px';
+                        taskCard.style.display = 'flex';
+                        taskCard.style.flexDirection = 'column'; // Arrange elements in rows
+                        taskCard.style.gap = '10px'; // Add spacing between rows
+                        taskCard.style.backgroundColor = '#f9f9f9';
+
+                        const taskId = document.createElement('span');
+                        taskId.textContent = `ID: ${task?.id}`;
+                        taskId.style.fontWeight = 'bold';
+
+                        const taskNameContainer = document.createElement('div');
+                        taskNameContainer.style.display = 'flex';
+                        taskNameContainer.style.alignItems = 'center';
+                        taskNameContainer.style.gap = '10px';
+
+                        const taskNameLabel = document.createElement('label');
+                        taskNameLabel.textContent = 'Task:';
+                        taskNameLabel.style.fontSize = '14px';
+
+                        const taskNameInput = document.createElement('input');
+                        taskNameInput.type = 'text';
+                        taskNameInput.value = task?.item || '';
+                        taskNameInput.style.flex = '1'; // Make the input take up remaining space
+                        taskNameInput.style.padding = '5px';
+
+                        const taskPriorityContainer = document.createElement('div');
+                        taskPriorityContainer.style.display = 'flex';
+                        taskPriorityContainer.style.alignItems = 'center';
+                        taskPriorityContainer.style.gap = '10px';
+
+                        const orderInputLabel = document.createElement('label');
+                        orderInputLabel.textContent = 'Priority:';
+                        orderInputLabel.style.fontSize = '14px';
+
+                        const orderInput = document.createElement('input');
+                        orderInput.type = 'number';
+                        orderInput.value = task?.priority || currentId;
+                        orderInput.style.width = '50px';
+                        orderInput.style.padding = '5px';
+
+                        const updateButton = document.createElement('button');
+                        updateButton.textContent = 'Update';
+                        updateButton.style.backgroundColor = '#007BFF';
+                        updateButton.style.color = '#fff';
+                        updateButton.style.border = 'none';
+                        updateButton.style.padding = '8px 12px';
+                        updateButton.style.borderRadius = '4px';
+                        updateButton.style.cursor = 'pointer';
+                        updateButton.onclick = () => {
+                            // Validate task name and priority before updating
+                            const taskName = taskNameInput.value.trim();
+                            const taskPriority = parseInt(orderInput.value, 10);
+
+                            // Check if task name is empty
+                            if (!taskName) {
+                                alert('Task name cannot be empty.');
+                                return;
+                            }
+
+                            // Check if priority is a number and greater than or equal to 0
+                            if (isNaN(taskPriority) || taskPriority < 0) {
+                                alert('Priority must be a number greater than or equal to 0.');
+                                return;
+                            }
+
+                            // Update the task with valid values
+                            updateTaskOrder(task?.id, taskName, taskPriority);
+                        };
+
+                        taskNameContainer.appendChild(taskNameLabel);
+                        taskNameContainer.appendChild(taskNameInput);
+                        taskPriorityContainer.appendChild(orderInputLabel);
+                        taskPriorityContainer.appendChild(orderInput);
+                        taskPriorityContainer.appendChild(updateButton);
+
+                        taskCard.appendChild(taskId);
+                        taskCard.appendChild(taskNameContainer);
+                        taskCard.appendChild(taskPriorityContainer);
+
+                        li.appendChild(taskCard);
+                        taskList.appendChild(li);
+
+                        currentId = data?.Items?.length + 1;
+                    });
+
+
+
+                } else {
+                    alert('Failed to fetch tasks');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to fetch tasks');
+            }
+        }
+
+        // Function to update task order
+        async function updateTaskOrder(taskId,item, newOrder) {
+            try {
+                let priority = Number(newOrder)
+                const response = await fetch(`${apiUrl}${taskId}/`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ priority,item:item }),
+                });
+
+                if (response.ok) {
+                    alert('Task order updated!');
+                    fetchTasks();  // Re-fetch tasks after updating the order
+                } else {
+                    alert('Failed to update task order');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to update task order');
+            }
+        }
+
+        // Fetch the list of tasks when the page loads
+        window.onload = fetchTasks;
+    </script>
+</body>
+</html>
